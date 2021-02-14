@@ -72,7 +72,7 @@ jobs:
         id: setup
         run: |
           # Get the Unity versions for test. (The latest patch versions for each minor version.)
-          VERSIONS=`npx unity-changeset list --versions --latest-patch --json --min 2018.3`
+          VERSIONS=`npx unity-changeset list --versions --json --min 2019.3 --max 2019.4.3`
           echo "Versions: $VERSIONS"
           echo "::set-output name=versions::$VERSIONS"
 
@@ -96,28 +96,10 @@ jobs:
         # The latest patch versions for each minor version.
         version: ${{ fromJson(needs.base-and-hub.outputs.versions) }}
         module:
-          - base
           - linux-il2cpp
-          - windows-mono
-          - mac-mono
-          - ios
-          - android
-          - webgl
         include:
-          - module: base
-            platform: StandaloneLinux64
           - module: linux-il2cpp
             platform: StandaloneLinux64
-          - module: windows-mono
-            platform: StandaloneWindows
-          - module: mac-mono
-            platform: StandaloneOSX
-          - module: ios
-            platform: iOS
-          - module: android
-            platform: Android
-          - module: webgl
-            platform: WebGL
         exclude: ${{ fromJson(needs.base-and-hub.outputs.excludes) }}
 
     steps:
