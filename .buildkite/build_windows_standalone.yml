@@ -1,8 +1,8 @@
 steps:
   - label: "Unity Editor ${UnityVersion}-${Unity_Changeset} Linux Server"
     commands: 
-      - "docker build . --file ./editor/Dockerfile -t ${DockerUsername}/unity_editor:${UnityVersion}-linux-server --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=windows-mono"
-      - "docker push ${DockerUsername}/unity_editor:${UnityVersion}-windows-standalone"
+      - "docker build . --file ./editor/Dockerfile -t ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-linux-server --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=windows-mono"
+      - "docker push ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-windows-standalone"
     plugins:
       - docker-login#v2.1.0:
           #Set within an agent hook
