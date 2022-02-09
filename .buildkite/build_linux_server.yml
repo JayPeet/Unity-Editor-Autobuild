@@ -1,3 +1,8 @@
 steps:
   - label: "Unity Editor ${UnityVersion}-${Unity_Changeset} Linux Server"
     command: "docker build . --file ./editor/Dockerfile -t ${DockerUsername}/unity_editor:${UnityVersion}-linux-server --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=linux-server"
+    plugins:
+      - docker-login#v2.1.0:
+          #Set within an agent hook
+          username: ${DOCKER_USERNAME}
+          password-env: ${DOCKER_PASSWORD}
