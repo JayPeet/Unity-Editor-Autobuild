@@ -1,3 +1,5 @@
+#This is used for autobuilding docker images for alpha/beta unity editors via buildkite.
+
 # Docker Image for Unity3d
 
 CI specialised docker images for Unity3d.
