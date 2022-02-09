@@ -1,0 +1,14 @@
+steps:
+  - label: "Push Unity Editor ${UnityVersion}-${Unity_Changeset} Linux Server as Latest"
+    commands: 
+      - "docker tag ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-linux-server ${DOCKER_USERNAME}/unity_editor:latest-linux-server"
+      - "docker push ${DOCKER_USERNAME}/unity_editor:latest-linux-server"
+    - label: "Push Unity Editor ${UnityVersion}-${Unity_Changeset} Windows Standalone as Latest"
+    commands: 
+      - "docker tag ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-windows-standalone ${DOCKER_USERNAME}/unity_editor:latest-windows-standalone"
+      - "docker push ${DOCKER_USERNAME}/unity_editor:latest-windows-standalone"
+    plugins:
+      - docker-login#v2.1.0:
+          #Set within an agent hook
+          username: ${DOCKER_USERNAME}
+          password-env: DOCKER_PASSWORD
