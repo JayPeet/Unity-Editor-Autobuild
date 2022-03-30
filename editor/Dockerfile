@@ -288,3 +288,6 @@ RUN echo "$version" | grep -q -v '^\(2019.3\|2019.4\|2020.1\)' \
     mono-devel \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+# Install Blender
+RUN apt-get -q update && apt-get -q install -y blender
