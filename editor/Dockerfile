@@ -20,7 +20,9 @@ RUN for mod in $module; do \
       else \
         unity-hub install-modules --version "$version" --module "$mod" --childModules | tee /var/log/install-module-${mod}.log && grep 'Missing module' /var/log/install-module-${mod}.log | exit $(wc -l); \
       fi \
-    done
+    done \
+	# Set execute permissions for modules
+	&& chmod -R 755 /opt/unity/editors/$version/Editor/Data/PlaybackEngines
 
 ###########################
 #          Editor         #
@@ -163,12 +165,8 @@ RUN echo "$version-$module" | grep -q -vP '^20(?!18).*android' \
   && apt-get remove -y jq \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  \
   # Accept licenses
-  && yes | "${ANDROID_HOME}/tools/bin/sdkmanager" --licenses \
-  \
-  # Let other users to run sdkmanager as well
-  && chmod 755 "${ANDROID_HOME}/tools/bin/sdkmanager" \
+  && yes | "${ANDROID_HOME}/tools/bin/sdkmanager" --licenses \  
   \
   # Update alias 'unity-editor'
   && { \
@@ -209,6 +207,14 @@ RUN echo "$module" | grep -q -v '\(webgl\|linux-il2cpp\)' \
   && rm -rf /var/lib/apt/lists/*
 
 #=======================================================================================
+# [android, ios] python 3 support
+#=======================================================================================
+RUN echo "$module" | grep -q -v '\(android\|ios\)' \
+  && exit 0 \
+  || : \
+  && ln -s /usr/bin/python3 /usr/bin/python
+
+#=======================================================================================
 # [2019.x] libnotify4 libunwind-dev libssl1.0
 #=======================================================================================
 RUN echo "$version" | grep -q -v '^2019.' \
@@ -245,9 +251,9 @@ RUN echo "$version-$module" | grep -q -v '^2021.*linux-il2cpp' \
   && rm -rf /var/lib/apt/lists/*
 
 #=======================================================================================
-# [2021.2+] linux-server support
+# [2021.2.4+] linux-server support
 #=======================================================================================
-RUN echo "$version-$module" | grep -q '\(2018\|2019\|2020\|2021.1\|2021.2.0\|2021.2.1\|2021.2.2\|2021.2.3\)' \
+RUN echo "$version-$module" | grep -q '\(2018\|2019\|2020\|2021.1\|2021.2.[0-3]f\)' \
   && exit 0 \
   || : \
   && ( \
@@ -255,7 +261,12 @@ RUN echo "$version-$module" | grep -q '\(2018\|2019\|2020\|2021.1\|2021.2.0\|202
     || wget --no-verbose -O /tmp/linux-server.tar.xz        "https://beta.unity3d.com/download/$changeSet/LinuxEditorTargetInstaller/UnitySetup-Linux-Server-Support-for-Editor-$version.tar.xz" \
   ) \
   && tar Jxfv /tmp/linux-server.tar.xz -C "$UNITY_PATH" \
-  && rm /tmp/linux-server.tar.xz
+  && rm /tmp/linux-server.tar.xz \
+  && ( \
+    [ "$module" != "linux-il2cpp" ] \
+      && rm -rf /opt/unity/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/Variations/*il2cpp \
+      || : \
+  )
 
 #=======================================================================================
 # [2021.2/2022.1-mac-mono] MacStandaloneSupport variation paths (arm64 -> ARM64)
