@@ -24,6 +24,14 @@ RUN for mod in $module; do \
 	# Set execute permissions for modules
 	&& chmod -R 755 /opt/unity/editors/$version/Editor/Data/PlaybackEngines
 
+RUN echo "$version-$module" | grep -q -vP '^(2021.2.(?![0-4](?![0-9]))|2021.[3-9]|202[2-9]|20[3-9]).*linux' \
+  && exit 0 \
+  || unity-hub install-modules --version "$version" --module "linux-server" --childModules | tee /var/log/install-module-linux-server.log && grep 'Missing module' /var/log/install-module-linux-server.log | exit $(wc -l);
+
+RUN echo "$version-$module" | grep -q -vP '^(2021.2.(?![0-4](?![0-9]))|2021.[3-9]|202[2-9]|20[3-9]).*windows' \
+  && exit 0 \
+  || unity-hub install-modules --version "$version" --module "windows-server" --childModules | tee /var/log/install-module-windows-server.log && grep 'Missing module' /var/log/install-module-windows-server.log | exit $(wc -l);
+
 ###########################
 #          Editor         #
 ###########################
@@ -143,10 +151,6 @@ RUN echo "$version-$module" | grep -q -v '^\(2018.3\|2018.4\).*android' \
 RUN echo "$version-$module" | grep -q -vP '^20(?!18).*android' \
   && exit 0 \
   || : \
-  # Install jq
-  && apt-get update -qq \
-  && apt-get install -qq -y --no-install-recommends jq \
-  \
   # Environment Variables
   && export RAW_ANDROID_SDK_ROOT=$(jq -cr '(.[] | select(.id == "android-sdk-platform-tools")).destination' $UNITY_PATH/modules.json) \
   # We need to replace some characters common to paths that will break the sed expression when expanded
@@ -161,12 +165,8 @@ RUN echo "$version-$module" | grep -q -vP '^20(?!18).*android' \
   && export JAVA_HOME=${ESCAPED_JAVA_HOME:-$UNITY_PATH/Editor/Data/PlaybackEngines/AndroidPlayer/Tools/OpenJDK/Linux} \
   && export PATH=$JAVA_HOME/bin:${ANDROID_SDK_ROOT}/tools:${ANDROID_SDK_ROOT}/tools/bin:${ANDROID_SDK_ROOT}/platform-tools:${PATH} \
   \
-  # Clean up
-  && apt-get remove -y jq \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
   # Accept licenses
-  && yes | "${ANDROID_HOME}/tools/bin/sdkmanager" --licenses \  
+  && yes | "${ANDROID_HOME}/tools/bin/sdkmanager" --licenses \
   \
   # Update alias 'unity-editor'
   && { \
@@ -199,20 +199,10 @@ RUN echo "$module" | grep -q -v '\(webgl\|linux-il2cpp\)' \
   || : \
   && apt-get -q update \
   && apt-get -q install -y --no-install-recommends --allow-downgrades \
-    python \
-    python-setuptools \
     build-essential \
     clang \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-
-#=======================================================================================
-# [android, ios] python 3 support
-#=======================================================================================
-RUN echo "$module" | grep -q -v '\(android\|ios\)' \
-  && exit 0 \
-  || : \
-  && ln -s /usr/bin/python3 /usr/bin/python
 
 #=======================================================================================
 # [2019.x] libnotify4 libunwind-dev libssl1.0
@@ -239,6 +229,16 @@ RUN echo "$version-$module" | grep -q -v '^\(2018\|2019\|2020.1\).*webgl' \
     $UNITY_PATH/Editor/Data/PlaybackEngines/WebGLSupport/BuildTools/Brotli/dist/Brotli-0.4.0-py2.7-macosx-10.10-x86_64.egg
 
 #=======================================================================================
+# [2021.x/2022.x-mac-mono] x64arm64/x64ARM64 case issue https://github.com/game-ci/unity-builder/issues/320
+#=======================================================================================
+RUN echo "$version-$module" | grep -q -v '^202[12].*mac-mono' \
+  && exit 0 \
+  || : \
+  && ln -s \
+    $UNITY_PATH/Editor/Data/PlaybackEngines/MacStandaloneSupport/Variations/macos_x64arm64_player_nondevelopment_mono \
+    $UNITY_PATH/Editor/Data/PlaybackEngines/MacStandaloneSupport/Variations/macos_x64ARM64_player_nondevelopment_mono
+
+#=======================================================================================
 # [2021.x-linux-il2cpp] lld
 #=======================================================================================
 RUN echo "$version-$module" | grep -q -v '^2021.*linux-il2cpp' \
@@ -249,33 +249,6 @@ RUN echo "$version-$module" | grep -q -v '^2021.*linux-il2cpp' \
     lld \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-
-#=======================================================================================
-# [2021.2.4+] linux-server support
-#=======================================================================================
-RUN echo "$version-$module" | grep -q '\(2018\|2019\|2020\|2021.1\|2021.2.[0-3]f\)' \
-  && exit 0 \
-  || : \
-  && ( \
-    wget --no-verbose -O /tmp/linux-server.tar.xz "https://download.unity3d.com/download_unity/$changeSet/LinuxEditorTargetInstaller/UnitySetup-Linux-Server-Support-for-Editor-$version.tar.xz" \
-    || wget --no-verbose -O /tmp/linux-server.tar.xz        "https://beta.unity3d.com/download/$changeSet/LinuxEditorTargetInstaller/UnitySetup-Linux-Server-Support-for-Editor-$version.tar.xz" \
-  ) \
-  && tar Jxfv /tmp/linux-server.tar.xz -C "$UNITY_PATH" \
-  && rm /tmp/linux-server.tar.xz \
-  && ( \
-    [ "$module" != "linux-il2cpp" ] \
-      && rm -rf /opt/unity/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/Variations/*il2cpp \
-      || : \
-  )
-
-#=======================================================================================
-# [2021.2/2022.1-mac-mono] MacStandaloneSupport variation paths (arm64 -> ARM64)
-#=======================================================================================
-RUN echo "$version-$module" | grep -q -v '^\(2021.2\|2022.1\).*mac-mono' \
-  && exit 0 \
-  || : \
-  && cd /opt/unity/Editor/Data/PlaybackEngines/MacStandaloneSupport/Variations \
-  && ls | grep arm64 | sed 'p;s/arm64/ARM64/' | xargs -n2 mv
 
 #=======================================================================================
 # [2019.3/2019.4/2020.1] mono-devel
