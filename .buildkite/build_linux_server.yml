@@ -1,7 +1,7 @@
 steps:
   - label: "Unity Editor ${UnityVersion}-${Unity_Changeset} Linux Server"
     commands: 
-      - "docker build . --file ./editor/Dockerfile -t ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-linux-server --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=\"[\"linux-server\", \"linux-il2cpp\"]\""
+      - "docker build . --file ./editor/Dockerfile -t ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-linux-server --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=[linux-server, linux-il2cpp]"
       - "docker push ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-linux-server"
     plugins:
       - docker-login#v2.1.0:

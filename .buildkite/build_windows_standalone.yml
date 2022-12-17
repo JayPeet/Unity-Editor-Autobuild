@@ -1,7 +1,7 @@
 steps:
   - label: "Unity Editor ${UnityVersion}-${Unity_Changeset} Windows Standalone"
     commands: 
-      - "docker build . --file ./editor/Dockerfile -t ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-windows-standalone --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=\"[\"windows-mono\", \"windows-il2cpp\"]\""
+      - "docker build . --file ./editor/Dockerfile -t ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-windows-standalone --build-arg=version=${UnityVersion} --build-arg=changeSet=${UnityChangeset} --build-arg=module=[windows-mono, windows-il2cpp]"
       - "docker push ${DOCKER_USERNAME}/unity_editor:${UnityVersion}-windows-standalone"
     plugins:
       - docker-login#v2.1.0:
